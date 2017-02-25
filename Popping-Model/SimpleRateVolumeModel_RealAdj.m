@@ -1,4 +1,5 @@
-close all; clear all
+%close all;
+clear all;
 
 rng(1) % seed random number
 global n frprime fvprime x0 mNoise rNoise nScale
@@ -12,26 +13,27 @@ wN = 1; % network coupling strength
 
 %% Sensors and Actuators
 
-load('Actuators.mat'); % load computed 
-%R = randperm(n,50); % actuator neurons
+load('Actuators_random_20.mat'); % load computed 
+%R = randsample(n,50); % actuator neurons
 
-all_neurons=1:1:n;
-%all_neurons(R)=[];
-S = randsample(all_neurons,20); % sensor neurons, randomly in the body
+%S = randsample(n,20); % sensor neurons, randomly in the body
+load('Sensors_random_30.mat');
 
 wS = 1; % sensor signal strength
 wR = 1; % actuator signal strength
 
 %% Rate model
 tauR = ones(n,1)*0.1; % neuron time scales
-betaR = 20; TR = 0.5; % sigmoidal parameters
+%tauR = random('Normal',0.1,0.05,n,1); % distribution of the neural time scales
+
+betaR = 20; TR = 0.75; % sigmoidal parameters
 % Potential Function
-% fsigR = @(y)(1./(1+exp(-betaR.*(y-TR)))); % sigmoidal function
+ fsigR = @(y)(1./(1+exp(-betaR.*(y-TR)))); % sigmoidal function
 %  fsigR = @(y)(y>1); % threshold linear
-  fsigR = @(y)(y); % linear function
+%  fsigR = @(y)(y); % linear function      % oscillations work with it
 
 %% Volume model
-tauV = 100; % volume time scale
+tauV = 100; % volume time scale and max value
 vNom = 1; % Nominal Volume
 tlag = 0.1; % Time lag of actuation
 betaV = 1000; TV = 5; % sigmoidal parameters
@@ -45,7 +47,7 @@ nMagMeas = 0; %0.01; % measurement noise
 nMagRate = 0; %0.01; % rate noise 
 
 %% Simulation detail
-tfinal = 800; % Run time of simulation
+tfinal = 10; % Run time of simulation
 r0 = rand(n,1); % Initial rates
 v0 = rand(1); % Initial volume
 x0 = [r0; v0];
@@ -76,9 +78,19 @@ subplot(3,1,1)
 hold on
 j = jet;
 colormap('jet')
-p = plot(G);
+%p = plot(G);
+
+% grid for neuron placing
+mm=5;    % wideness
+nn=20;   % length
+[Y,X]=meshgrid(1:nn,1:mm);        
+xx=reshape(X,[1,mm*nn]);
+yy=reshape(Y,[1,mm*nn]);
+p=plot(G,'Xdata',xx,'Ydata',yy);
+
 p.NodeCData = b./wS;
 axis off
+set(gca,'Fontsize',20)
 title('Topology and Sensor Locations')
 pMarker = plot(NaN,NaN,'o','MarkerFaceColor',j(end,:));
 if length(S)~=n; % Display legend if not all neurons are 'sensors'
@@ -88,9 +100,12 @@ end
 subplot(3,1,2)
 hold on
 colormap('jet')
-p = plot(G);
+%p = plot(G);
+p=plot(G,'Xdata',xx,'Ydata',yy);
+
 p.NodeCData = c./wR;
 axis off
+set(gca,'Fontsize',20)
 title('Topology and Actuator Locations')
 pMarker = plot(NaN,NaN,'o','MarkerFaceColor',j(end,:));
 if length(R)~=n; % Display legend if not all neurons are 'actuators'
@@ -99,9 +114,12 @@ end
 
 subplot(3,1,3);
 set(gca,'Fontsize',20)
-p = plot(G);
+%p = plot(G);
+p=plot(G,'Xdata',xx,'Ydata',yy);
+
 p.NodeCData = x(end,1:n);
 axis off
+set(gca,'Fontsize',20)
 title('Rate Distribution at t_{final}')
 colorbar('EastOutside')
 subplot(3,1,1);
@@ -116,7 +134,8 @@ figure
 subplot(2,1,1)
 rSample = linspace(0,2,100);
 plot(rSample,fsigR(rSample));
-xlabel('Cumulative local network and Volume sensing')
+set(gca,'Fontsize',20)
+xlabel('Cumulative local network and Volume sensing ()')
 ylabel('\Phi_r')
 subplot(2,1,2)
 vSample = linspace(0,10,100);
@@ -129,6 +148,7 @@ ylabel('\Phi_v')
 figure
 subplot(2,1,1)
 plot(t,x(:,1:n))
+set(gca,'Fontsize',20)
 xlabel('time')
 ylabel('Firing rate')
 subplot(2,1,2)
